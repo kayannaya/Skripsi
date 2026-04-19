@@ -17,6 +17,7 @@ trl>=0.8.6
 
 # LightRAG
 lightrag-hku>=1.0.0
+sentence-transformers>=3.0.0
 
 # deep learning backend
 torch>=2.3.0

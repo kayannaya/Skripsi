@@ -9,7 +9,7 @@ from huggingface_hub import login
 # configurations
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
+LLM_MODEL       = "meta-llama/Meta-Llama-3.1-8B-Instruct"
 
 DEFAULT_DOCS_DIR  = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\dataConstruction\disease_docs"
 DEFAULT_INDEX_DIR = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\LightRAG\lightrag_index"
@@ -22,7 +22,11 @@ HF_USERNAME = "kayannaya"
 def build_lightrag(index_dir: str, hf_token: str):
     from lightrag import LightRAG
     from lightrag.utils import EmbeddingFunc
+    from sentence_transformers import SentenceTransformer
     import numpy as np
+
+    # load embedding model once locally — no api calls
+    embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
     async def llm_func(prompt, system_prompt=None, history_messages=[], **kwargs):
         from huggingface_hub import InferenceClient
@@ -41,21 +45,14 @@ def build_lightrag(index_dir: str, hf_token: str):
         return response.choices[0].message.content
 
     async def embed_func(texts: list[str]) -> np.ndarray:
-        from huggingface_hub import InferenceClient
-        client = InferenceClient(model=EMBEDDING_MODEL, token=hf_token)
-        embeddings = []
-        for text in texts:
-            emb = client.feature_extraction(text)
-            if isinstance(emb[0], list):
-                emb = emb[0]
-            embeddings.append(emb)
-        return np.array(embeddings, dtype=np.float32)
+        embeddings = embedding_model.encode(texts, convert_to_numpy=True)
+        return embeddings.astype(np.float32)
 
-    # probe embedding dimension — use new_event_loop() for Python 3.14 compatibility
+    # probe embedding dimension
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     sample_emb = loop.run_until_complete(embed_func(["probe"]))
-    embed_dim = sample_emb.shape[1]
+    embed_dim  = sample_emb.shape[1]
     print(f"[INFO] Embedding dimension: {embed_dim}")
 
     rag = LightRAG(
