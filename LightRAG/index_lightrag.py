@@ -9,7 +9,7 @@ from huggingface_hub import login
 # configurations
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL       = "Henrychur/MMed-Llama-3-8B"
+LLM_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 DEFAULT_DOCS_DIR  = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\dataConstruction\disease_docs"
 DEFAULT_INDEX_DIR = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\LightRAG\lightrag_index"
