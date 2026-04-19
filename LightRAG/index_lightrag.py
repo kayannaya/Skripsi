@@ -9,7 +9,7 @@ from huggingface_hub import login
 # configurations
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL       = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+LLM_MODEL       = "llama3.1:8b"
 
 DEFAULT_DOCS_DIR  = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\dataConstruction\disease_docs"
 DEFAULT_INDEX_DIR = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\LightRAG\lightrag_index"
@@ -29,20 +29,22 @@ def build_lightrag(index_dir: str, hf_token: str):
     embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
     async def llm_func(prompt, system_prompt=None, history_messages=[], **kwargs):
-        from huggingface_hub import InferenceClient
-        client = InferenceClient(model=LLM_MODEL, token=hf_token)
+        import httpx
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         for msg in history_messages:
             messages.append(msg)
         messages.append({"role": "user", "content": prompt})
-        response = client.chat_completion(
-            messages=messages,
-            max_tokens=512,
-            temperature=0.1,
-        )
-        return response.choices[0].message.content
+
+        # ollama runs locally on port 11434 — no api key needed
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                "http://localhost:11434/api/chat",
+                json={"model": LLM_MODEL, "messages": messages, "stream": False},
+            )
+            response.raise_for_status()
+            return response.json()["message"]["content"]
 
     async def embed_func(texts: list[str]) -> np.ndarray:
         embeddings = embedding_model.encode(texts, convert_to_numpy=True)
