@@ -25,7 +25,7 @@ def build_lightrag(index_dir: str, hf_token: str):
     from sentence_transformers import SentenceTransformer
     import numpy as np
 
-    # load embedding model once locally — no api calls
+    # load embedding model once locally (no api calls)
     embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
     async def llm_func(prompt, system_prompt=None, history_messages=[], **kwargs):
@@ -37,7 +37,7 @@ def build_lightrag(index_dir: str, hf_token: str):
             messages.append(msg)
         messages.append({"role": "user", "content": prompt})
 
-        # ollama runs locally on port 11434 — no api key needed
+        # ollama runs locally on port 11434 (no api key needed)
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
