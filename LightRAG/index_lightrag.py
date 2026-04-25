@@ -9,7 +9,7 @@ from huggingface_hub import login
 # configurations
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL       = "llama3.1:8b"
+LLM_MODEL       = "qwen2.5:7b"
 
 DEFAULT_DOCS_DIR  = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\dataConstruction\disease_docs"
 DEFAULT_INDEX_DIR = r"C:\Users\Design\Desktop\Kayla\Uni\Skripsi\LightRAG\lightrag_index"
@@ -37,11 +37,15 @@ def build_lightrag(index_dir: str, hf_token: str):
             messages.append(msg)
         messages.append({"role": "user", "content": prompt})
 
-        # timeout=600 to handle slow cpu inference
         async with httpx.AsyncClient(timeout=600) as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
-                json={"model": LLM_MODEL, "messages": messages, "stream": False},
+                json={
+                    "model": LLM_MODEL, 
+                    "messages": messages, 
+                    "stream": False,
+                    "options": {"num_ctx" : 8192}
+                    },
             )
             response.raise_for_status()
             return response.json()["message"]["content"]
@@ -65,6 +69,11 @@ def build_lightrag(index_dir: str, hf_token: str):
             max_token_size=512,
             func=embed_func,
         ),
+        chunk_token_size=512,
+        llm_model_max_async=1,
+        llm_model_kwargs={
+        "timeout": 600,
+        }
     )
     return rag
 
