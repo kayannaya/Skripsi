@@ -37,14 +37,17 @@ def build_lightrag(index_dir: str, hf_token: str):
             messages.append(msg)
         messages.append({"role": "user", "content": prompt})
 
-        async with httpx.AsyncClient(timeout=600) as client:
+        async with httpx.AsyncClient(timeout=99999) as client:
             response = await client.post(
                 "http://localhost:11434/api/chat",
                 json={
                     "model": LLM_MODEL, 
                     "messages": messages, 
                     "stream": False,
-                    "options": {"num_ctx" : 8192}
+                    "keep_alive": "30m",
+                    "options": {"num_ctx" : 4096, 
+                                "num_predict": 512
+                                }
                     },
             )
             response.raise_for_status()
@@ -71,8 +74,8 @@ def build_lightrag(index_dir: str, hf_token: str):
         ),
         chunk_token_size=512,
         llm_model_max_async=1,
-        llm_model_kwargs={
-        "timeout": 600,
+        addon_params={
+        "language": "Indonesian",  # since your docs are in Indonesian
         }
     )
     return rag
